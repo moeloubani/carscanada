@@ -1,0 +1,205 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String    @id @default(uuid())
+  email           String    @unique
+  passwordHash    String
+  phone           String?
+  firstName       String
+  lastName        String
+  province        String?
+  city            String?
+  postalCode      String?
+  avatarUrl       String?
+  emailVerified   Boolean   @default(false)
+  phoneVerified   Boolean   @default(false)
+  isDealer        Boolean   @default(false)
+  dealerName      String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  listings        Listing[]
+  savedListings   SavedListing[]
+  buyerConversations  Conversation[] @relation("BuyerConversations")
+  sellerConversations Conversation[] @relation("SellerConversations")
+  sentMessages    Message[]
+  searchAlerts    SearchAlert[]
+  transactions    Transaction[]
+}
+
+model Listing {
+  id              String    @id @default(uuid())
+  userId          String
+  title           String
+  make            String
+  model           String
+  year            Int
+  price           Decimal   @db.Decimal(10, 2)
+  mileageKm       Int
+  vin             String?
+  bodyType        String
+  transmission    String
+  fuelType        String
+  drivetrain      String
+  exteriorColor   String
+  interiorColor   String?
+  engine          String?
+  description     String    @db.Text
+  condition       String
+  province        String
+  city            String
+  postalCode      String
+  latitude        Decimal?  @db.Decimal(10, 8)
+  longitude       Decimal?  @db.Decimal(11, 8)
+  status          ListingStatus @default(ACTIVE)
+  isFeatured      Boolean   @default(false)
+  featuredUntil   DateTime?
+  viewsCount      Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  expiresAt       DateTime?
+
+  user            User      @relation(fields: [userId], references: [id])
+  images          ListingImage[]
+  savedBy         SavedListing[]
+  conversations   Conversation[]
+  transactions    Transaction[]
+
+  @@index([make, model, year])
+  @@index([province, city])
+  @@index([status])
+  @@index([userId])
+}
+
+enum ListingStatus {
+  DRAFT
+  ACTIVE
+  SOLD
+  EXPIRED
+  DELETED
+}
+
+model ListingImage {
+  id              String    @id @default(uuid())
+  listingId       String
+  imageUrl        String
+  thumbnailUrl    String?
+  position        Int
+  isPrimary       Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+
+  listing         Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId])
+}
+
+model SavedListing {
+  id              String    @id @default(uuid())
+  userId          String
+  listingId       String
+  createdAt       DateTime  @default(now())
+
+  user            User      @relation(fields: [userId], references: [id])
+  listing         Listing   @relation(fields: [listingId], references: [id])
+
+  @@unique([userId, listingId])
+}
+
+model Conversation {
+  id              String    @id @default(uuid())
+  listingId       String
+  buyerId         String
+  sellerId        String
+  lastMessageAt   DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  listing         Listing   @relation(fields: [listingId], references: [id])
+  buyer           User      @relation("BuyerConversations", fields: [buyerId], references: [id])
+  seller          User      @relation("SellerConversations", fields: [sellerId], references: [id])
+  messages        Message[]
+
+  @@unique([listingId, buyerId, sellerId])
+  @@index([buyerId])
+  @@index([sellerId])
+}
+
+model Message {
+  id              String    @id @default(uuid())
+  conversationId  String
+  senderId        String
+  content         String    @db.Text
+  isRead          Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+
+  conversation    Conversation @relation(fields: [conversationId], references: [id])
+  sender          User      @relation(fields: [senderId], references: [id])
+
+  @@index([conversationId])
+}
+
+model SearchAlert {
+  id              String    @id @default(uuid())
+  userId          String
+  name            String
+  filters         Json
+  frequency       AlertFrequency
+  isActive        Boolean   @default(true)
+  lastSentAt      DateTime?
+  createdAt       DateTime  @default(now())
+
+  user            User      @relation(fields: [userId], references: [id])
+}
+
+enum AlertFrequency {
+  INSTANT
+  DAILY
+  WEEKLY
+}
+
+model FeaturedPackage {
+  id              String    @id @default(uuid())
+  name            String
+  description     String
+  price           Decimal   @db.Decimal(10, 2)
+  durationDays    Int
+  features        Json
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  transactions    Transaction[]
+}
+
+model Transaction {
+  id              String    @id @default(uuid())
+  userId          String
+  listingId       String?
+  packageId       String?
+  amount          Decimal   @db.Decimal(10, 2)
+  currency        String    @default("CAD")
+  stripePaymentId String?
+  status          TransactionStatus
+  createdAt       DateTime  @default(now())
+
+  user            User      @relation(fields: [userId], references: [id])
+  listing         Listing?  @relation(fields: [listingId], references: [id])
+  package         FeaturedPackage? @relation(fields: [packageId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
