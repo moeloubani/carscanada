@@ -14,7 +14,7 @@ export const connectRedis = async () => {
           const delay = Math.min(times * 50, 2000);
           return delay;
         },
-        reconnectOnError: (err) => {
+        reconnectOnError: (err: Error) => {
           const targetError = 'READONLY';
           if (err.message.includes(targetError)) {
             return true;
