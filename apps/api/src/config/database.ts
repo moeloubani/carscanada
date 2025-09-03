@@ -5,12 +5,23 @@ const prisma = new PrismaClient({
 });
 
 export const connectDatabase = async () => {
-  try {
-    await prisma.$connect();
-    console.log('Database connected successfully');
-  } catch (error) {
-    console.error('Database connection failed:', error);
-    throw error;
+  let retries = 0;
+  const maxRetries = 3;
+  
+  while (retries < maxRetries) {
+    try {
+      await prisma.$connect();
+      console.log('Database connected successfully');
+      return;
+    } catch (error) {
+      retries++;
+      console.error(`Database connection failed (attempt ${retries}/${maxRetries}):`, error);
+      if (retries >= maxRetries) {
+        console.error('Max retries reached. Database will be unavailable.');
+        return;
+      }
+      await new Promise(resolve => setTimeout(resolve, 3000));
+    }
   }
 };
 

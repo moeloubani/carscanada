@@ -52,8 +52,9 @@ export const connectRedis = async () => {
       retries++;
       console.error(`Failed to connect to Redis (attempt ${retries}/${maxRetries}):`, error);
       if (retries >= maxRetries) {
-        console.error('Max retries reached. Redis connection failed.');
-        throw error;
+        console.error('Max retries reached. Redis will be unavailable for this session.');
+        redis = null;
+        return;
       }
       await new Promise(resolve => setTimeout(resolve, 2000));
     }
