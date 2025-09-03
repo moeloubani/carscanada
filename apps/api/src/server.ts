@@ -48,8 +48,42 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/api', limiter);
 
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+app.get('/health', async (req, res) => {
+  const health = {
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    services: {
+      database: 'unknown',
+      redis: 'unknown',
+    },
+  };
+
+  try {
+    const { default: prisma } = await import('./config/database');
+    await prisma.$queryRaw`SELECT 1`;
+    health.services.database = 'healthy';
+  } catch (error) {
+    health.services.database = 'unhealthy';
+    health.status = 'degraded';
+  }
+
+  try {
+    const { getRedis } = await import('./config/redis');
+    const redisClient = getRedis();
+    if (redisClient) {
+      await redisClient.ping();
+      health.services.redis = 'healthy';
+    } else {
+      health.services.redis = 'not initialized';
+    }
+  } catch (error) {
+    health.services.redis = 'unhealthy';
+    health.status = health.status === 'degraded' ? 'degraded' : 'degraded';
+  }
+
+  const statusCode = health.status === 'ok' ? 200 : 503;
+  res.status(statusCode).json(health);
 });
 
 app.use('/api/auth', authRoutes);
@@ -68,10 +102,14 @@ const PORT = process.env.PORT || 3001;
 
 const startServer = async () => {
   try {
-    await connectDatabase();
-    await connectRedis();
+    await connectDatabase().catch(err => {
+      console.error('Database connection failed (will continue):', err);
+    });
+    await connectRedis().catch(err => {
+      console.error('Redis connection failed (will continue):', err);
+    });
     
-    httpServer.listen(PORT, () => {
+    httpServer.listen(PORT, '0.0.0.0', () => {
       console.log(`Server running on port ${PORT}`);
       console.log(`Health check: http://localhost:${PORT}/health`);
     });
