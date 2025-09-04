@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
+import path from 'path';
 import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import rateLimit from 'express-rate-limit';
@@ -12,10 +13,12 @@ import userRoutes from './routes/user.routes';
 import listingRoutes from './routes/listing.routes';
 import conversationRoutes from './routes/conversation.routes';
 import searchRoutes from './routes/search.routes';
+import analyticsRoutes from './routes/analytics.routes';
 import paymentRoutes from './routes/payment.routes';
 import { initializeWebSocket } from './websockets';
 import { connectDatabase } from './config/database';
 import { connectRedis } from './config/redis';
+import { cronService } from './services/cron.service';
 
 dotenv.config();
 
@@ -35,7 +38,9 @@ const limiter = rateLimit({
   legacyHeaders: false,
 });
 
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" } // Allow serving images to different origins
+}));
 app.use(cors({
   origin: [
     process.env.FRONTEND_URL || 'http://localhost:3000',
@@ -44,9 +49,27 @@ app.use(cors({
   ],
   credentials: true,
 }));
+
+// Special handling for Stripe webhook - needs raw body
+app.use((req, res, next) => {
+  if (req.originalUrl === '/api/payments/webhook') {
+    express.raw({ type: 'application/json' })(req, res, (err) => {
+      if (err) return next(err);
+      // Store raw body for Stripe signature verification
+      (req as any).rawBody = req.body;
+      next();
+    });
+  } else {
+    next();
+  }
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/api', limiter);
+
+// Serve uploaded files statically
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 app.get('/health', async (req, res) => {
   const health = {
@@ -86,11 +109,17 @@ app.get('/health', async (req, res) => {
   res.status(statusCode).json(health);
 });
 
+// API health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', service: 'api', timestamp: new Date().toISOString() });
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/listings', listingRoutes);
 app.use('/api/conversations', conversationRoutes);
 app.use('/api/search', searchRoutes);
+app.use('/api/analytics', analyticsRoutes);
 app.use('/api/payments', paymentRoutes);
 
 app.use(notFound);
@@ -109,6 +138,9 @@ const startServer = async () => {
       console.error('Redis connection failed (will continue):', err);
     });
     
+    // Start cron jobs
+    await cronService.start();
+    
     httpServer.listen(Number(PORT), '0.0.0.0', () => {
       console.log(`Server running on port ${PORT}`);
       console.log(`Health check: http://localhost:${PORT}/health`);
@@ -118,6 +150,23 @@ const startServer = async () => {
     process.exit(1);
   }
 };
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM signal received: closing HTTP server');
+  await cronService.stop();
+  httpServer.close(() => {
+    console.log('HTTP server closed');
+  });
+});
+
+process.on('SIGINT', async () => {
+  console.log('SIGINT signal received: closing HTTP server');
+  await cronService.stop();
+  httpServer.close(() => {
+    console.log('HTTP server closed');
+  });
+});
 
 startServer();
 

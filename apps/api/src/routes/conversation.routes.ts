@@ -1,21 +1,81 @@
 import { Router } from 'express';
+import { authenticate } from '../middleware/auth';
+import { conversationController, messageLimiter } from '../controllers/conversation.controller';
+import {
+  startConversationValidator,
+  sendMessageValidator,
+  conversationIdValidator,
+  paginationValidator,
+  messagesPaginationValidator,
+} from '../validators/conversation.validator';
 
 const router = Router();
 
-router.get('/', (req, res) => {
-  res.json({ message: 'Get conversations endpoint - to be implemented' });
-});
+// All conversation routes require authentication
+router.use(authenticate);
 
-router.get('/:id/messages', (req, res) => {
-  res.json({ message: 'Get messages endpoint - to be implemented' });
-});
+// Get user's conversations with pagination
+router.get(
+  '/',
+  paginationValidator,
+  conversationController.getUserConversations
+);
 
-router.post('/', (req, res) => {
-  res.json({ message: 'Start conversation endpoint - to be implemented' });
-});
+// Get unread message count
+router.get(
+  '/unread-count',
+  conversationController.getUnreadCount
+);
 
-router.post('/:id/messages', (req, res) => {
-  res.json({ message: 'Send message endpoint - to be implemented' });
-});
+// Get single conversation details
+router.get(
+  '/:id',
+  conversationIdValidator,
+  conversationController.getConversation
+);
+
+// Get conversation messages with pagination
+router.get(
+  '/:id/messages',
+  messagesPaginationValidator,
+  conversationController.getConversationMessages
+);
+
+// Start new conversation
+router.post(
+  '/',
+  messageLimiter,
+  startConversationValidator,
+  conversationController.startConversation
+);
+
+// Send message in existing conversation
+router.post(
+  '/:id/messages',
+  messageLimiter,
+  sendMessageValidator,
+  conversationController.sendMessage
+);
+
+// Mark messages as read
+router.put(
+  '/:id/read',
+  conversationIdValidator,
+  conversationController.markMessagesAsRead
+);
+
+// Handle typing indicator
+router.post(
+  '/:id/typing',
+  conversationIdValidator,
+  conversationController.handleTyping
+);
+
+// Delete conversation (soft delete)
+router.delete(
+  '/:id',
+  conversationIdValidator,
+  conversationController.deleteConversation
+);
 
 export default router;

@@ -1,17 +1,25 @@
 import { Router } from 'express';
+import paymentController from '../controllers/payment.controller';
+import { authenticate } from '../middleware/auth';
 
 const router = Router();
 
-router.get('/packages', (req, res) => {
-  res.json({ message: 'Get packages endpoint - to be implemented' });
-});
+// Public endpoints
+router.get('/packages', paymentController.getPackages);
+router.get('/packages/:id', paymentController.getPackageById);
 
-router.post('/checkout', (req, res) => {
-  res.json({ message: 'Create checkout session endpoint - to be implemented' });
-});
+// Webhook endpoint (raw body is handled in server.ts)
+router.post('/webhook', paymentController.handleWebhook);
 
-router.post('/webhook', (req, res) => {
-  res.json({ message: 'Stripe webhook endpoint - to be implemented' });
-});
+// Authenticated endpoints
+router.post('/checkout', authenticate, paymentController.createCheckoutSession);
+router.get('/transactions', authenticate, paymentController.getUserTransactions);
+router.get('/transactions/:id', authenticate, paymentController.getTransactionById);
+
+// Admin endpoints (TODO: Add admin middleware)
+router.post('/admin/packages', authenticate, paymentController.createPackage);
+router.put('/admin/packages/:id', authenticate, paymentController.updatePackage);
+router.get('/admin/statistics', authenticate, paymentController.getStatistics);
+router.post('/admin/refund/:paymentIntentId', authenticate, paymentController.processRefund);
 
 export default router;
