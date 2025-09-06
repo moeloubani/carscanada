@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { ListingForm } from '@/components/forms/ListingForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,8 +10,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { listings as listingsApi } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 
-export default function EditListingPage({ params }: { params: { id: string } }) {
+export default function EditListingPage() {
   const router = useRouter();
+  const params = useParams();
+  const listingId = params.id as string;
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [fetchingData, setFetchingData] = useState(true);
@@ -19,12 +21,12 @@ export default function EditListingPage({ params }: { params: { id: string } }) 
 
   useEffect(() => {
     fetchListingData();
-  }, [params.id]);
+  }, [listingId]);
 
   const fetchListingData = async () => {
     try {
       setFetchingData(true);
-      const response = await listingsApi.getOne(params.id);
+      const response = await listingsApi.getOne(listingId);
       setListingData(response.data);
     } catch (error) {
       toast({
@@ -70,10 +72,10 @@ export default function EditListingPage({ params }: { params: { id: string } }) 
         
         formData.append('status', isDraft ? 'draft' : 'active');
         
-        await listingsApi.update(params.id, formData);
+        await listingsApi.update(listingId, formData);
       } else {
         // No new images, send as JSON
-        await listingsApi.update(params.id, {
+        await listingsApi.update(listingId, {
           ...data,
           status: isDraft ? 'draft' : 'active',
         });
