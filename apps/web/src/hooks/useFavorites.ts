@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient, UseQueryOptions } from '@tanstack/react-query';
-import { user, favorites, PaginatedResponse, ApiError } from '@/lib/api';
+import { user as userApi, favorites, PaginatedResponse, ApiError } from '@/lib/api';
 import { toast } from 'sonner';
 import { Listing } from './useListings';
 import { useAuth } from '@/lib/auth';
@@ -9,26 +9,26 @@ export function useFavorites(
   limit: number = 20,
   options?: Omit<UseQueryOptions<PaginatedResponse<Listing>, ApiError>, 'queryKey' | 'queryFn'>
 ) {
-  const { user: currentUser, isAuthenticated } = useAuth();
+  const { user: currentUser } = useAuth();
 
   return useQuery<PaginatedResponse<Listing>, ApiError>({
     queryKey: ['favorites', page, limit],
     queryFn: async () => {
-      const response = await user.getFavorites({ page, limit });
+      const response = await userApi.getFavorites({ page, limit });
       return response.data;
     },
-    enabled: isAuthenticated,
+    enabled: !!currentUser,
     ...options,
   });
 }
 
 export function useAddFavorite() {
   const queryClient = useQueryClient();
-  const { isAuthenticated } = useAuth();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (listingId: string) => {
-      if (!isAuthenticated) {
+      if (!user) {
         throw new Error('You must be logged in to save favorites');
       }
       const response = await favorites.add(listingId);
@@ -51,11 +51,11 @@ export function useAddFavorite() {
 
 export function useRemoveFavorite() {
   const queryClient = useQueryClient();
-  const { isAuthenticated } = useAuth();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (listingId: string) => {
-      if (!isAuthenticated) {
+      if (!user) {
         throw new Error('You must be logged in to manage favorites');
       }
       const response = await favorites.remove(listingId);
@@ -96,21 +96,21 @@ export function useToggleFavorite() {
 }
 
 export function useIsFavorite(listingId: string) {
-  const { isAuthenticated } = useAuth();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   return useQuery({
     queryKey: ['favorite-status', listingId],
     queryFn: async () => {
-      if (!isAuthenticated) return false;
+      if (!user) return false;
       
       // Check if the listing is in the user's favorites
       // This could be optimized by having a dedicated endpoint
-      const response = await user.getFavorites({ limit: 100 });
+      const response = await userApi.getFavorites({ limit: 100 });
       const favoriteIds = response.data.data.map(listing => listing.id);
       return favoriteIds.includes(listingId);
     },
-    enabled: isAuthenticated && !!listingId,
+    enabled: !!user && !!listingId,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 }

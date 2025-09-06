@@ -11,7 +11,8 @@ import {
   CheckCheck,
   Check,
   Clock,
-  Car
+  Car,
+  MessageSquare
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

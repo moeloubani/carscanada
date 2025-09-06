@@ -33,16 +33,12 @@ export function usePackages() {
         setPackages(response.data);
       } else {
         // Fallback to constants if API doesn't return packages
-        setPackages(FEATURED_PACKAGES as FeaturedPackage[]);
+        setPackages(FEATURED_PACKAGES.map(pkg => ({...pkg, features: [...pkg.features]})));
       }
     } catch (err) {
       // If API fails, use constants as fallback
-      setPackages(FEATURED_PACKAGES as FeaturedPackage[]);
-      const error = err as ApiError;
-      // Don't show error if we have fallback data
-      if (!FEATURED_PACKAGES || FEATURED_PACKAGES.length === 0) {
-        setError(error.message || 'Failed to fetch packages');
-      }
+      setPackages(FEATURED_PACKAGES.map(pkg => ({...pkg, features: [...pkg.features]})));
+      // Don't show error since we have fallback data
     } finally {
       setIsLoading(false);
     }

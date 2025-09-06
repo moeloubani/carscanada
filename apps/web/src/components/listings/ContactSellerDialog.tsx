@@ -34,7 +34,7 @@ interface ContactSellerDialogProps {
 export function ContactSellerDialog({ listing, children }: ContactSellerDialogProps) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { user, isAuthenticated } = useAuth();
+  const { user } = useAuth();
 
   const form = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
@@ -50,7 +50,7 @@ export function ContactSellerDialog({ listing, children }: ContactSellerDialogPr
     try {
       setIsSubmitting(true);
       
-      if (isAuthenticated) {
+      if (user) {
         // Send message through the platform
         await messages.send({
           recipientId: listing.seller.id,
@@ -241,7 +241,7 @@ export function ContactSellerDialog({ listing, children }: ContactSellerDialogPr
                   <Phone className="h-4 w-4 mr-2" />
                   Call Seller
                 </Button>
-                {isAuthenticated && (
+                {user && (
                   <Button
                     variant="outline"
                     size="sm"

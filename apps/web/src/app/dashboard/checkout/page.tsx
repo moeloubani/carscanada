@@ -171,7 +171,7 @@ export default function CheckoutPage() {
                       </div>
                       <div className="flex items-center gap-1">
                         <MapPin className="h-3 w-3" />
-                        <span>{listing.city}, {listing.province}</span>
+                        <span>{listing.location.city}, {listing.location.province}</span>
                       </div>
                     </div>
                   </div>

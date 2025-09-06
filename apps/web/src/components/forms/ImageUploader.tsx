@@ -66,7 +66,14 @@ export function ImageUploader({
     });
 
     if (validFiles.length > 0) {
-      onChange([...value, ...validFiles]);
+      // Type guard to handle both File[] and string[] types
+      if (value.length > 0 && typeof value[0] === 'string') {
+        // If existing values are strings (URLs), we can't mix them with Files
+        // This shouldn't happen in practice as we're either working with Files or URLs
+        console.warn('Cannot mix URL strings with File objects');
+        return;
+      }
+      onChange([...value, ...validFiles] as File[]);
     }
   }, [value, onChange, maxImages, toast]);
 
@@ -81,7 +88,7 @@ export function ImageUploader({
 
   const removeImage = (index: number) => {
     const newImages = value.filter((_, i) => i !== index);
-    onChange(newImages);
+    onChange(newImages as typeof value);
   };
 
   const handleDragStart = (index: number) => {
@@ -100,7 +107,7 @@ export function ImageUploader({
     // Insert at new position
     newImages.splice(index, 0, draggedImage);
     
-    onChange(newImages);
+    onChange(newImages as typeof value);
     setDraggedIndex(index);
   };
 

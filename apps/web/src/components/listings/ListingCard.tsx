@@ -26,7 +26,7 @@ export function ListingCard({
   priority = false 
 }: ListingCardProps) {
   const [imageError, setImageError] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const { user } = useAuth();
   const { data: isFavorite = false } = useIsFavorite(listing.id);
   const { toggleFavorite, isLoading } = useToggleFavorite();
 
@@ -49,7 +49,7 @@ export function ListingCard({
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (isAuthenticated) {
+    if (user) {
       toggleFavorite(listing.id, isFavorite);
     } else {
       // Redirect to login or show login modal

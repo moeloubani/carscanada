@@ -148,11 +148,13 @@ function ListingsContent() {
               <div className="mb-4 flex flex-wrap gap-2">
                 {Object.entries(filters).map(([key, value]) => {
                   if (!value) return null;
-                  let displayValue = value;
+                  let displayValue: string = '';
                   
                   // Format filter display
                   if (key === 'minPrice' || key === 'maxPrice') {
                     displayValue = `$${parseInt(value as string).toLocaleString()}`;
+                  } else {
+                    displayValue = String(value);
                   }
                   
                   return (

@@ -28,6 +28,7 @@ const registerSchema = z.object({
   confirmPassword: z.string(),
   phone: z.string().optional(),
   isDealer: z.boolean().default(false),
+  dealershipName: z.string().optional(),
   acceptTerms: z.boolean().refine((val) => val === true, {
     message: 'You must accept the terms and conditions',
   }),
@@ -65,10 +66,10 @@ export default function RegisterPage() {
       await register({
         email: data.email,
         password: data.password,
-        firstName: data.firstName,
-        lastName: data.lastName,
+        name: `${data.firstName} ${data.lastName}`,
         phone: data.phone,
-        role: data.isDealer ? 'dealer' : 'user',
+        userType: data.isDealer ? 'dealer' : 'buyer',
+        dealershipName: data.dealershipName,
       });
       
       setRegistrationSuccess(true);

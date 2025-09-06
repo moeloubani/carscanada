@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Loader2, Mail, ArrowLeft, Car, CheckCircle } from 'lucide-react';
-import { api } from '@/lib/api';
+import { auth } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,7 +36,7 @@ export default function ForgotPasswordPage() {
   const onSubmit = async (data: ForgotPasswordFormData) => {
     setIsLoading(true);
     try {
-      await api.forgotPassword(data.email);
+      await auth.forgotPassword(data.email);
       setSubmittedEmail(data.email);
       setIsSuccess(true);
       toast({

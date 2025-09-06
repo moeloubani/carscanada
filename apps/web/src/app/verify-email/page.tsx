@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2, CheckCircle, XCircle, Mail, Car } from 'lucide-react';
-import { api } from '@/lib/api';
+import { auth, user } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,7 +29,7 @@ export default function VerifyEmailPage() {
       }
 
       try {
-        await api.verifyEmail(token);
+        await auth.verifyEmail(token);
         setVerificationStatus('success');
         
         // Start countdown for redirect
@@ -178,9 +178,10 @@ export default function VerifyEmailPage() {
                 className="w-full"
                 onClick={async () => {
                   try {
-                    await api.resendVerificationEmail();
-                    setVerificationStatus('success');
-                    setErrorMessage('');
+                    // TODO: Implement resendVerificationEmail endpoint
+                    // await user.resendVerificationEmail();
+                    console.log('Resend verification email - not yet implemented');
+                    setErrorMessage('This feature is not yet available.');
                   } catch (error: any) {
                     setErrorMessage(error.message || 'Unable to resend verification email.');
                   }

@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Loader2, Lock, Car, CheckCircle, XCircle } from 'lucide-react';
-import { api } from '@/lib/api';
+import { auth } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -82,7 +82,7 @@ export default function ResetPasswordPage() {
 
     setIsLoading(true);
     try {
-      await api.resetPassword(token, data.password);
+      await auth.resetPassword(token, data.password);
       setIsSuccess(true);
       toast({
         title: 'Password reset successful',

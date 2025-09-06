@@ -42,11 +42,11 @@ export default function ListingDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const listingId = params.id as string;
-  const { isAuthenticated } = useAuth();
+  const { user } = useAuth();
   
   const [showPhone, setShowPhone] = useState(false);
   
-  const { data: listing, isLoading, error } = useListing(listingId);
+  const { listing, isLoading, error } = useListing(listingId);
   const { data: isFavorite = false } = useIsFavorite(listingId);
   const { toggleFavorite, isLoading: favoriteLoading } = useToggleFavorite();
   const { data: similarListings, isLoading: similarLoading } = useSimilarListings(
@@ -208,7 +208,7 @@ export default function ListingDetailsPage() {
                   <Button
                     variant="outline"
                     onClick={() => {
-                      if (isAuthenticated) {
+                      if (user) {
                         toggleFavorite(listingId, isFavorite);
                       } else {
                         router.push('/login?redirect=' + encodeURIComponent(window.location.pathname));
