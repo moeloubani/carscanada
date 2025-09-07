@@ -3,17 +3,19 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "CarsCanada - Buy and Sell Cars in Canada",
-  description: "Your trusted marketplace for buying and selling cars across Canada.",
+  description: "Your trusted marketplace for buying and selling cars across Canada",
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {children}
+      </body>
     </html>
   );
 }
